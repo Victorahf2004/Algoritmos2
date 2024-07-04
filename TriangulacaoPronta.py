@@ -11,7 +11,6 @@ class Ponto:
     def coords(self):
         return f'({self.x}, {self.y}), index: {self.index}'
 
-# sua aresta
 class Vector:
     def __init__(self, pInicio, pFinal):
         self.pInicio = pInicio
