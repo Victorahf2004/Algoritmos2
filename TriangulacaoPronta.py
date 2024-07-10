@@ -71,6 +71,8 @@ def isPointInTriangle(p, ar1, ar2):
     # Verificar se a soma das áreas dos triângulos menores é igual à área do triângulo original
     var = (area_pab + area_pbc + area_pca) == area_abc
     return var
+
+
 # Função para plotar o polígono customizado
 def plot_custom_polygon(G, vertices, arestas):
     fig, ax = plt.subplots()
@@ -149,7 +151,7 @@ def triangulacao(grafo):
     novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
     triangulos.append(novo_triangulo)
     return (grafo, triangulos)
-
+'''
 v1 = Ponto(0, 0)
 v2 = Ponto(0, 3)
 v3 = Ponto(4, 3)
@@ -171,3 +173,4 @@ for t in triangulos:
     print(f'Um triangulo é: {t}')
     print()
 plot_custom_polygon(G.graph, vertices, arestas)
+'''
