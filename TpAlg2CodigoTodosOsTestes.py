@@ -31,7 +31,7 @@ class Grafo:
         idx = len(self.vertices)
         v.index = idx
         self.vertices.append(v)
-        self.graph.add_node(idx, pos=(v.x, v.y))
+        self.graph.add_node(idx, pos=(v.x, v.y), color = None)
     
     def adicionar_aresta(self, ar):
         self.arestas.append(ar)
