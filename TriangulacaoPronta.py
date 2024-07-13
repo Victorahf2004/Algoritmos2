@@ -102,6 +102,7 @@ def plot_custom_polygon(G, vertices, arestas):
 
 def triangulacao(grafo):
     vertices = list(grafo.vertices)
+    
     #arTriangulacao é a cópia do vetor de arestas do grafo sobre a qual vou ir tirando e colocando novas arestas
     arTriangulacao = list(grafo.arestas)
     triangulos = []
@@ -139,8 +140,10 @@ def triangulacao(grafo):
             triangulos.append(novo_triangulo)
             grafo.adicionar_aresta(nova_aresta)
             arTriangulacao.insert(arestaProx, nova_aresta)
-            del arTriangulacao[arestaProx + 1]
-            del arTriangulacao[aresta]
+            #del arTriangulacao[arestaProx + 1]
+            #del arTriangulacao[aresta]
+            arTriangulacao.pop(arTriangulacao[arestaProx + 1])
+            arTriangulacao.pop(arTriangulacao[aresta])
             tamanho = len(vertices)
         aresta += 1
         if aresta > tamanho - 1:
