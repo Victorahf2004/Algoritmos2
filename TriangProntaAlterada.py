@@ -124,7 +124,6 @@ def triangulacao(grafo):
                 vertices2.append(ver)
         for v in vertices2:
             var = isPointInTriangle(v, arTriangulacao[aresta], arTriangulacao[arestaProx])
-            # print(f'Var é: {var}')
             if var:
                 pontoContido = True
                 break
