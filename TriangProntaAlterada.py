@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import networkx as nx
+import math
 
-# seu vertice
-class Ponto:
+class Vertice:
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -11,7 +11,7 @@ class Ponto:
     def coords(self):
         return f'({self.x}, {self.y}), index: {self.index}'
 
-class Vector:
+class Aresta:
     def __init__(self, pInicio, pFinal):
         self.pInicio = pInicio
         self.pFinal = pFinal
@@ -31,7 +31,7 @@ class Grafo:
         idx = len(self.vertices)
         v.index = idx
         self.vertices.append(v)
-        self.graph.add_node(idx, pos=(v.x, v.y))
+        self.graph.add_node(idx, pos=(v.x, v.y), color = None)
     
     def adicionar_aresta(self, ar):
         self.arestas.append(ar)
@@ -39,7 +39,7 @@ class Grafo:
 
 def mudancaDirecao3Pontos(ar1, ar2):
     vet1 = ar1
-    vet2 = Vector(ar1.pInicio, ar2.pFinal)
+    vet2 = Aresta(ar1.pInicio, ar2.pFinal)
     a1 = vet1.a1
     a2 = vet1.a2
     b1 = vet2.a1
@@ -48,32 +48,32 @@ def mudancaDirecao3Pontos(ar1, ar2):
     b1a2 = b1 * a2
     c = a1b2 - b1a2
     direcao = ''
-    if c > 0:
+    if c < 0:
         direcao = 'horario'
-    elif c < 0:
+    elif c > 0:
         direcao = 'anti-horário'
     else:
         direcao = 'colinear'
     return direcao
 
 def isPointInTriangle(p, ar1, ar2):
+    def sign(p1, p2, p3):
+        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+
     a = ar1.pInicio
     b = ar1.pFinal
     c = ar2.pFinal
-    # Calcular a área do triângulo original ABC usando a fórmula do determinante
-    area_abc = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y))
-    
-    # Calcular as áreas dos triângulos menores PAB, PBC e PCA usando a mesma fórmula
-    area_pab = abs((a.x - p.x) * (b.y - p.y) - (b.x - p.x) * (a.y - p.y))
-    area_pbc = abs((b.x - p.x) * (c.y - p.y) - (c.x - p.x) * (b.y - p.y))
-    area_pca = abs((c.x - p.x) * (a.y - p.y) - (a.x - p.x) * (c.y - p.y))
-    
-    # Verificar se a soma das áreas dos triângulos menores é igual à área do triângulo original
-    var = (area_pab + area_pbc + area_pca) == area_abc
-    return var
 
+    d1 = sign(p, a, b)
+    d2 = sign(p, b, c)
+    d3 = sign(p, c, a)
 
-# Função para plotar o polígono customizado
+    has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+    has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+    return not (has_neg and has_pos)
+
+# Função para plotar o polígono
 def plot_custom_polygon(G, vertices, arestas):
     fig, ax = plt.subplots()
     # Pega as posições dos nós
@@ -82,7 +82,7 @@ def plot_custom_polygon(G, vertices, arestas):
     # Desenha o grafo
     nx.draw(G, pos, with_labels=True, node_color='cyan', edge_color='r', node_size=500, font_size=12, font_color='black')
 
-    # Desenhar apenas os segmentos de arestas definidos
+    # Desenha apenas os segmentos de arestas definidos
     for ar in arestas:
         x_values = [ar.pInicio.x, ar.pFinal.x]
         y_values = [ar.pInicio.y, ar.pFinal.y]
@@ -102,14 +102,17 @@ def plot_custom_polygon(G, vertices, arestas):
 
 def triangulacao(grafo):
     vertices = list(grafo.vertices)
-    
     #arTriangulacao é a cópia do vetor de arestas do grafo sobre a qual vou ir tirando e colocando novas arestas
     arTriangulacao = list(grafo.arestas)
+    # arTriangulacao2 = arTriangulacao[::-1]
+    # arTriangulacao = arTriangulacao2
     triangulos = []
     tamanho = len(vertices)
     aresta = 0
     arestaProx = aresta + 1
     while tamanho > 3:
+        #print(f'Os vertices são {vertices}')
+        #print(f'O tamanho é: {tamanho}')
         pontoContido = False
         vertices2 = []
         ar1 = arTriangulacao[aresta].pInicio
@@ -126,7 +129,7 @@ def triangulacao(grafo):
                 vertices2.append(ver)
         for v in vertices2:
             var = isPointInTriangle(v, arTriangulacao[aresta], arTriangulacao[arestaProx])
-            print(f'Var é: {var}')
+            # print(f'Var é: {var}')
             if var:
                 pontoContido = True
                 break
@@ -135,15 +138,13 @@ def triangulacao(grafo):
             pInicio = arTriangulacao[aresta].pInicio
             pFinal = arTriangulacao[arestaProx].pFinal
             vertices.remove(arTriangulacao[aresta].pFinal)
-            nova_aresta = Vector(pInicio, pFinal)
+            nova_aresta = Aresta(pInicio, pFinal)
             novo_triangulo = (pInicio.index, arTriangulacao[aresta].pFinal.index, arTriangulacao[arestaProx].pFinal.index)
             triangulos.append(novo_triangulo)
             grafo.adicionar_aresta(nova_aresta)
             arTriangulacao.insert(arestaProx, nova_aresta)
-            #del arTriangulacao[arestaProx + 1]
-            #del arTriangulacao[aresta]
-            arTriangulacao.pop(arTriangulacao[arestaProx + 1])
-            arTriangulacao.pop(arTriangulacao[aresta])
+            del arTriangulacao[arestaProx + 1]
+            del arTriangulacao[aresta]
             tamanho = len(vertices)
         aresta += 1
         if aresta > tamanho - 1:
@@ -154,26 +155,3 @@ def triangulacao(grafo):
     novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
     triangulos.append(novo_triangulo)
     return (grafo, triangulos)
-'''
-v1 = Ponto(0, 0)
-v2 = Ponto(0, 3)
-v3 = Ponto(4, 3)
-v4 = Ponto(4, 0)
-vertices = [v1, v2, v3, v4]
-G = Grafo()
-for v in vertices:
-    G.adicionar_vertice(v)
-
-ar1 = Vector(v1, v2)
-ar2 = Vector(v2, v3)
-ar3 = Vector(v3, v4)
-ar4 = Vector(v4, v1)
-arestas = [ar1, ar2, ar3, ar4]
-for aresta in arestas:
-    G.adicionar_aresta(aresta)
-(G, triangulos) = triangulacao(G)
-for t in triangulos:
-    print(f'Um triangulo é: {t}')
-    print()
-plot_custom_polygon(G.graph, vertices, arestas)
-'''
