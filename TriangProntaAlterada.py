@@ -100,6 +100,91 @@ def plot_custom_polygon(G, vertices, arestas):
 
     plt.show()
 
+
+def triangulacao(grafo, polygon_stages, years):
+    vertices = list(grafo.vertices)
+    arTriangulacao = list(grafo.arestas)
+    triangulos = []
+    tamanho = len(vertices)
+    aresta = 0
+    arestaProx = aresta + 1
+    ###
+    teveOrelha = False
+    y = 0
+    verticesAnimacao = list(grafo.vertices)
+    verticesAnimacao.append(verticesAnimacao[0])
+    ###
+    while tamanho > 3:
+        ###
+        teveOrelha = False
+        pontoContido = False
+        ###
+
+        vertices2 = []
+        ar1 = arTriangulacao[aresta].pInicio
+        ar2 = arTriangulacao[arestaProx].pInicio
+        ar3 = arTriangulacao[arestaProx].pFinal
+        for ver in vertices:
+            if (((ver.x == ar1.x) and (ver.y == ar1.y)) and (ver.index == ar1.index)):
+                continue
+            elif (((ver.x == ar2.x) and (ver.y == ar2.y)) and (ver.index == ar2.index)):
+                continue
+            elif (((ver.x == ar3.x) and (ver.y == ar3.y)) and (ver.index == ar3.index)):
+                continue
+            else:
+                vertices2.append(ver)
+        for v in vertices2:
+            var = isPointInTriangle(v, arTriangulacao[aresta], arTriangulacao[arestaProx])
+            if var:
+                pontoContido = True
+                break
+        direcao = mudancaDirecao3Pontos(arTriangulacao[aresta], arTriangulacao[arestaProx])
+        if (direcao == 'anti-horário') and pontoContido is False:
+            pInicio = arTriangulacao[aresta].pInicio
+            pFinal = arTriangulacao[arestaProx].pFinal
+            vertices.remove(arTriangulacao[aresta].pFinal)
+            nova_aresta = Aresta(pInicio, pFinal)
+            novo_triangulo = (pInicio.index, arTriangulacao[aresta].pFinal.index, arTriangulacao[arestaProx].pFinal.index)
+            triangulos.append(novo_triangulo)
+            grafo.adicionar_aresta(nova_aresta)
+            # ###
+
+            verticesAnimacao.append(pFinal)
+            vAnimacao = list(map(lambda P: (P.x,P.y), verticesAnimacao))
+            polygon_stages.append(vAnimacao)
+            teveOrelha = True
+            y += 1
+            y2 = str(y)
+            years.append(y2)
+
+            # ###
+            arTriangulacao.insert(arestaProx, nova_aresta)
+            del arTriangulacao[arestaProx + 1]
+            del arTriangulacao[aresta]
+            tamanho = len(vertices)
+        aresta += 1
+        if aresta > tamanho - 1:
+            aresta = 0
+        arestaProx = aresta + 1
+        if arestaProx > tamanho - 1:
+            arestaProx = 0
+        # ###
+        if teveOrelha is False:
+            y += 1
+            verticesAnimacao.append(ar2)
+            y2 = str(y)
+            years.append(y2)
+            vAnimacao = list(map(lambda P: (P.x,P.y), verticesAnimacao))
+            polygon_stages.append(vAnimacao)
+        # ###
+    novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
+    triangulos.append(novo_triangulo)
+    y += 1
+    y2 = str(y)
+    years.append(y2)
+    return (grafo, triangulos, polygon_stages, years)
+    
+'''
 def triangulacao(grafo):
     vertices = list(grafo.vertices)
     arTriangulacao = list(grafo.arestas)
@@ -149,3 +234,4 @@ def triangulacao(grafo):
     novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
     triangulos.append(novo_triangulo)
     return (grafo, triangulos)
+'''
