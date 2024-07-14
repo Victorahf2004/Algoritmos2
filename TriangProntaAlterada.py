@@ -73,35 +73,19 @@ def isPointInTriangle(p, ar1, ar2):
 
     return not (has_neg and has_pos)
 
-# Função para plotar o polígono
-def plot_custom_polygon(G, vertices, arestas):
-    fig, ax = plt.subplots()
-    # Pega as posições dos nós
-    pos = nx.get_node_attributes(G, 'pos')
 
-    # Desenha o grafo
-    nx.draw(G, pos, with_labels=True, node_color='cyan', edge_color='r', node_size=500, font_size=12, font_color='black')
+def triangulacao(grafo, polygon_stages, intances):
+    """Função de implementação do algoritmo de Ear Clipping
 
-    # Desenha apenas os segmentos de arestas definidos
-    for ar in arestas:
-        x_values = [ar.pInicio.x, ar.pFinal.x]
-        y_values = [ar.pInicio.y, ar.pFinal.y]
-        ax.plot(x_values, y_values, 'r-')
+    Args:
+        grafo (Grafo): Grafo da estrutura de dados própria desse código
+        polygon_stages (list): Lista com listas de pontos, indicando 
+                               os pontos em cada frame para animação
+        intances (_type_): _description_
 
-    # Ajusta os limites do gráfico
-    ax.set_xlim(min(v.x for v in vertices) - 1, max(v.x for v in vertices) + 1)
-    ax.set_ylim(min(v.y for v in vertices) - 1, max(v.y for v in vertices) + 1)
-    ax.set_aspect('equal')
-
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Custom Polygon')
-    plt.grid(True)
-
-    plt.show()
-
-
-def triangulacao(grafo, polygon_stages, years):
+    Returns:
+        _type_: _description_
+    """
     vertices = list(grafo.vertices)
     arTriangulacao = list(grafo.arestas)
     triangulos = []
@@ -155,7 +139,7 @@ def triangulacao(grafo, polygon_stages, years):
             teveOrelha = True
             y += 1
             y2 = str(y)
-            years.append(y2)
+            intances.append(y2)
 
             # ###
             arTriangulacao.insert(arestaProx, nova_aresta)
@@ -173,7 +157,7 @@ def triangulacao(grafo, polygon_stages, years):
             y += 1
             verticesAnimacao.append(ar2)
             y2 = str(y)
-            years.append(y2)
+            intances.append(y2)
             vAnimacao = list(map(lambda P: (P.x,P.y), verticesAnimacao))
             polygon_stages.append(vAnimacao)
         # ###
@@ -181,57 +165,30 @@ def triangulacao(grafo, polygon_stages, years):
     triangulos.append(novo_triangulo)
     y += 1
     y2 = str(y)
-    years.append(y2)
-    return (grafo, triangulos, polygon_stages, years)
+    intances.append(y2)
+    return (grafo, triangulos, polygon_stages, intances)
+
+
+def color_triangle(graph, triangulos, i):
+    colors = ['red', 'yellow', 'green']
     
-'''
-def triangulacao(grafo):
-    vertices = list(grafo.vertices)
-    arTriangulacao = list(grafo.arestas)
-    triangulos = []
-    tamanho = len(vertices)
-    aresta = 0
-    arestaProx = aresta + 1
-    while tamanho > 3:
-        pontoContido = False
-        vertices2 = []
-        ar1 = arTriangulacao[aresta].pInicio
-        ar2 = arTriangulacao[arestaProx].pInicio
-        ar3 = arTriangulacao[arestaProx].pFinal
-        for ver in vertices:
-            if (((ver.x == ar1.x) and (ver.y == ar1.y)) and (ver.index == ar1.index)):
-                continue
-            elif (((ver.x == ar2.x) and (ver.y == ar2.y)) and (ver.index == ar2.index)):
-                continue
-            elif (((ver.x == ar3.x) and (ver.y == ar3.y)) and (ver.index == ar3.index)):
-                continue
-            else:
-                vertices2.append(ver)
-        for v in vertices2:
-            var = isPointInTriangle(v, arTriangulacao[aresta], arTriangulacao[arestaProx])
-            if var:
-                pontoContido = True
-                break
-        direcao = mudancaDirecao3Pontos(arTriangulacao[aresta], arTriangulacao[arestaProx])
-        if (direcao == 'anti-horário') and pontoContido is False:
-            pInicio = arTriangulacao[aresta].pInicio
-            pFinal = arTriangulacao[arestaProx].pFinal
-            vertices.remove(arTriangulacao[aresta].pFinal)
-            nova_aresta = Aresta(pInicio, pFinal)
-            novo_triangulo = (pInicio.index, arTriangulacao[aresta].pFinal.index, arTriangulacao[arestaProx].pFinal.index)
-            triangulos.append(novo_triangulo)
-            grafo.adicionar_aresta(nova_aresta)
-            arTriangulacao.insert(arestaProx, nova_aresta)
-            del arTriangulacao[arestaProx + 1]
-            del arTriangulacao[aresta]
-            tamanho = len(vertices)
-        aresta += 1
-        if aresta > tamanho - 1:
-            aresta = 0
-        arestaProx = aresta + 1
-        if arestaProx > tamanho - 1:
-            arestaProx = 0
-    novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
-    triangulos.append(novo_triangulo)
-    return (grafo, triangulos)
-'''
+    if i == 0:
+        p1,p2,p3 = triangulos[i]
+        graph.nodes[p1]['color'] = colors[0]
+        graph.nodes[p2]['color'] = colors[1]
+        graph.nodes[p3]['color'] = colors[2]
+        actual_stage = (list(nx.get_node_attributes(graph,'color').values()))
+        return graph, actual_stage
+
+    ja_coloridos = dict()
+    point = 0
+    for p in triangulos[i]:
+        if graph.nodes[p]['color'] != None:
+            ja_coloridos[p] = graph.nodes[p]['color']
+        else:
+            point = p    
+            
+    to_color = list((set(colors) - (set(ja_coloridos.values()) & set(colors))))[0]
+    graph.nodes[point]['color'] = to_color
+    actual_stage = (list(nx.get_node_attributes(graph,'color').values()))
+    return graph, actual_stage
