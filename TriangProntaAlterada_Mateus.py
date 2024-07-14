@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import math
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 class Vertice:
     def __init__(self, x, y):
@@ -102,49 +104,108 @@ def plot_custom_polygon(G, vertices, arestas):
 
 def triangulacao(grafo):
     vertices = list(grafo.vertices)
+    #arTriangulacao é a cópia do vetor de arestas do grafo sobre a qual vou ir tirando e colocando novas arestas
     arTriangulacao = list(grafo.arestas)
+    # arTriangulacao2 = arTriangulacao[::-1]
+    # arTriangulacao = arTriangulacao2
     triangulos = []
-    estados_parciais = []
+    estadosParciais = []
     tamanho = len(vertices)
     aresta = 0
-
+    arestaProx = aresta + 1
     while tamanho > 3:
+        #print(f'Os vertices são {vertices}')
+        #print(f'O tamanho é: {tamanho}')
         pontoContido = False
+        vertices2 = []
         ar1 = arTriangulacao[aresta].pInicio
         ar2 = arTriangulacao[arestaProx].pInicio
         ar3 = arTriangulacao[arestaProx].pFinal
-        vertices2 = [ver for ver in vertices if not ((ver.x == ar1.x and ver.y == ar1.y and ver.index == ar1.index) or 
-                                                     (ver.x == ar2.x and ver.y == ar2.y and ver.index == ar2.index) or 
-                                                     (ver.x == ar3.x and ver.y == ar3.y and ver.index == ar3.index))]
-        
+        for ver in vertices:
+            if (((ver.x == ar1.x) and (ver.y == ar1.y)) and (ver.index == ar1.index)):
+                continue
+            elif (((ver.x == ar2.x) and (ver.y == ar2.y)) and (ver.index == ar2.index)):
+                continue
+            elif (((ver.x == ar3.x) and (ver.y == ar3.y)) and (ver.index == ar3.index)):
+                continue
+            else:
+                vertices2.append(ver)
         for v in vertices2:
-            if isPointInTriangle(v, ar1, ar2, ar3):
+            var = isPointInTriangle(v, arTriangulacao[aresta], arTriangulacao[arestaProx])
+            # print(f'Var é: {var}')
+            if var:
                 pontoContido = True
                 break
-        
-        direcao = mudancaDirecao3Pontos(ar1, ar2, ar3)
-        if direcao == 'anti-horário' and not pontoContido:
+        direcao = mudancaDirecao3Pontos(arTriangulacao[aresta], arTriangulacao[arestaProx])
+        if (direcao == 'anti-horário') and pontoContido is False:
             pInicio = arTriangulacao[aresta].pInicio
-            pFinal = arTriangulacao[aresta].pFinal
-            vertices.remove(ar2)
+            pFinal = arTriangulacao[arestaProx].pFinal
+            vertices.remove(arTriangulacao[aresta].pFinal)
             nova_aresta = Aresta(pInicio, pFinal)
-            novo_triangulo = (pInicio.index, ar2.index, ar3.index)
+            novo_triangulo = (pInicio.index, arTriangulacao[aresta].pFinal.index, arTriangulacao[arestaProx].pFinal.index)
             triangulos.append(novo_triangulo)
             grafo.adicionar_aresta(nova_aresta)
-            arTriangulacao.insert(aresta + 1, nova_aresta)
-            del arTriangulacao[aresta + 2]
+            arTriangulacao.insert(arestaProx, nova_aresta)
+            del arTriangulacao[arestaProx + 1]
             del arTriangulacao[aresta]
-            tamanho -= 1
-            estados_parciais.append(list(triangulos))  # Adiciona o estado parcial
-        else:
-            aresta += 1
-        
-        if aresta >= tamanho - 1:
+            tamanho = len(vertices)
+            estadosParciais.append(list(triangulos))
+        aresta += 1
+        if aresta > tamanho - 1:
             aresta = 0
+        arestaProx = aresta + 1
+        if arestaProx > tamanho - 1:
+            arestaProx = 0
     
-    # Adiciona o último triângulo
     novo_triangulo = (arTriangulacao[0].pInicio.index, arTriangulacao[0].pFinal.index, arTriangulacao[1].pFinal.index)
     triangulos.append(novo_triangulo)
-    estados_parciais.append(list(triangulos))  # Adiciona o estado parcial final
+    estadosParciais.append(list(triangulos))
 
-    return (grafo, triangulos, estados_parciais)
+    return (grafo, triangulos, estadosParciais)
+
+def plot_animation(vertices, estados_parciais):
+    fig = make_subplots(rows=1, cols=1, subplot_titles=["Triangulação do Polígono"])
+    
+    # Posição inicial dos vértices
+    x, y = zip(*[(v.x, v.y) for v in vertices])
+    fig.add_trace(go.Scatter(x=x, y=y, mode='lines+markers', name='Polígono'), row=1, col=1)
+
+    frames = []
+    for estado in estados_parciais:
+        frame_data = [go.Scatter(x=x, y=y, mode='lines+markers', name='Polígono')]
+        
+        for tri in estado:
+            tri_x = [vertices[tri[0]].x, vertices[tri[1]].x, vertices[tri[2]].x, vertices[tri[0]].x]
+            tri_y = [vertices[tri[0]].y, vertices[tri[1]].y, vertices[tri[2]].y, vertices[tri[0]].y]
+            frame_data.append(go.Scatter(x=tri_x, y=tri_y, mode='lines', name='Triângulo'))
+        
+        frames.append(go.Frame(data=frame_data))
+
+    fig.frames = frames
+
+    fig.update_layout(
+        updatemenus=[{
+            "buttons": [
+                {
+                    "args": [None, {"frame": {"duration": 500, "redraw": True}, "fromcurrent": True}],
+                    "label": "Play",
+                    "method": "animate"
+                },
+                {
+                    "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate", "transition": {"duration": 0}}],
+                    "label": "Pause",
+                    "method": "animate"
+                }
+            ],
+            "direction": "left",
+            "pad": {"r": 10, "t": 87},
+            "showactive": False,
+            "type": "buttons",
+            "x": 0.1,
+            "xanchor": "right",
+            "y": 0,
+            "yanchor": "top"
+        }]
+    )
+
+    fig.show()
