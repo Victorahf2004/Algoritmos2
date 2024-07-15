@@ -86,6 +86,9 @@ def triangulacao(grafo, polygon_stages, intances):
     Returns:
         _type_: _description_
     """
+    #Inicalza com nada (GAB)
+    removed_vertices = [[]]
+    
     vertices = list(grafo.vertices)
     arTriangulacao = list(grafo.arestas)
     triangulos = []
@@ -124,9 +127,14 @@ def triangulacao(grafo, polygon_stages, intances):
                 break
         direcao = mudancaDirecao3Pontos(arTriangulacao[aresta], arTriangulacao[arestaProx])
         if (direcao == 'anti-horário') and pontoContido is False:
+            to_remove  = removed_vertices[-1].copy()
             pInicio = arTriangulacao[aresta].pInicio
             pFinal = arTriangulacao[arestaProx].pFinal
             vertices.remove(arTriangulacao[aresta].pFinal)
+            
+            # Adiciona vertices removidos(GAB)
+            to_remove.append((arTriangulacao[aresta].pFinal.x,arTriangulacao[aresta].pFinal.y))
+            
             nova_aresta = Aresta(pInicio, pFinal)
             novo_triangulo = (pInicio.index, arTriangulacao[aresta].pFinal.index, arTriangulacao[arestaProx].pFinal.index)
             triangulos.append(novo_triangulo)
@@ -146,6 +154,10 @@ def triangulacao(grafo, polygon_stages, intances):
             del arTriangulacao[arestaProx + 1]
             del arTriangulacao[aresta]
             tamanho = len(vertices)
+            
+            # Adiciona no Geral(GAB)
+            removed_vertices.append(to_remove)
+            
         aresta += 1
         if aresta > tamanho - 1:
             aresta = 0
@@ -166,7 +178,7 @@ def triangulacao(grafo, polygon_stages, intances):
     y += 1
     y2 = str(y)
     intances.append(y2)
-    return (grafo, triangulos, polygon_stages, intances)
+    return (grafo, triangulos, polygon_stages, intances, removed_vertices)
 
 
 def color_triangle(graph, triangulos, i):
